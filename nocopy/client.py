@@ -9,6 +9,7 @@ from typing import (
     Dict,
     Generic,
     List,
+    Optional,
     Tuple,
     TypeVar,
     Type,
@@ -47,7 +48,8 @@ def exception_on_error_code(func):
         if "msg" in response.json():
             message = f", {response.json()['msg']}"
 
-        msg = f"{response.status_code} {kind} {reason} for url {response.url}{message}"
+        msg = f"{response.status_code} {kind} {reason} for url {response.url}"
+        f"{message}"
         raise requests.exceptions.HTTPError(
             msg,
             response=response,
@@ -60,6 +62,9 @@ class Client(Generic[T]):
     Generic NocoDB REST API client using data models defined with
     `pydantic.BaseModel` to enable a straightforward interaction with your
     NocoDB data sets.
+
+    If the generic type `T` is not set the class handles the data as a simple
+    dict and omits any checks.
     """
 
     base_url: str
@@ -88,25 +93,28 @@ class Client(Generic[T]):
         Import records from a CSV file. The first row has to contain the names
         of the fields as described in the type model.
         """
-        ttype = self._type()
         with open(path) as f:
             data = csv.DictReader(f)
-            items = []
-            for entry in data:
-                if "id" not in entry:
-                    entry["id"] = -1
-                items.append(ttype.parse_obj(entry))
-        self.add(items)
+
+            if self._type() is not None:
+                items = []
+                for entry in data:
+                    if "id" not in entry:
+                        entry["id"] = -1
+                    items.append(self._type().parse_obj(entry))
+                self.add(items)
+            else:
+                self.add(data)
 
     def list(
         self,
         where: Union[None, str] = None,
-        limit: int = 10,
+        limit: Optional[int] = None,
         offset: int = 0,
         sort: Union[None, str, List[str]] = None,
         fields: Union[None, str, List[str]] = None,
         fields1: Union[None, str, List[str]] = None,
-    ) -> List[T]:
+    ) -> Union[List[Dict], List[T]]:
         """
         Get a list of all items applying to the optional parameters. Learn more
         on the query parameters [here](https://docs.nocodb.com/developer-resour
@@ -126,9 +134,10 @@ class Client(Generic[T]):
             Required column names in child result.
         """
         params = {
-            "limit": limit,
             "offset": offset,
         }
+        if limit is not None:
+            params["limit"] = limit
         if where is not None:
             params["where"] = where
         if sort is not None:
@@ -145,6 +154,10 @@ class Client(Generic[T]):
             params["fields1"] = fields1
 
         rsp = self.__get(params, self.base_url)
+
+        if self._type() is None:
+            return rsp.json()
+
         rsl = []
         for item in rsp.json():
             rsl.append(self._type().parse_obj(item))
@@ -155,7 +168,15 @@ class Client(Generic[T]):
         rsp = self.__get(self.base_url, str(id))
         if "id" not in rsp.json():
             raise KeyError(f"no item found for id {id}")
+
+        if self._type() is None:
+            return rsp.json()
         return self._type().parse_obj(rsp.json())
+
+    def exists(self, id: int) -> bool:
+        """Returns whether a record with the given id exists or not."""
+        rsp = self.__get({}, self.base_url, str(id), "exists")
+        return rsp.json()
 
     def update(self, id: int, item: Union[Dict[str, Any], T]):
         """
@@ -170,8 +191,13 @@ class Client(Generic[T]):
 
     # HELPER METHODS
 
-    def _type(self) -> Type:
-        """Returns the type of the generic T."""
+    def _type(self) -> Optional[Type]:
+        """
+        Returns the type of the generic T. Returns `None` when no type was set
+        for `T`.
+        """
+        if "__orig_class__" not in self.__dict__:
+            return None
         return self.__orig_class__.__args__[0]
 
     # HANDLING REQUESTS
@@ -183,7 +209,7 @@ class Client(Generic[T]):
     ) -> requests.Response:
         """Send a DELETE request to the API."""
         return requests.delete(
-            self.__build_url(*url),
+            build_url(*url),
             headers={
                 "xc-auth": self.auth_token,
                 "accept": "application/json",
@@ -198,7 +224,7 @@ class Client(Generic[T]):
     ) -> requests.Response:
         """Send a GET request to the API and returns the result."""
         return requests.get(
-            self.__build_url(*url),
+            build_url(*url),
             headers={"xc-auth": self.auth_token},
             params=params,
         )
@@ -221,7 +247,7 @@ class Client(Generic[T]):
                 items.append(item.dict(exclude={"id"}))
             payload = json.dumps(items)
         return requests.post(
-            self.__build_url(*url),
+            build_url(*url),
             headers={
                 "xc-auth": self.auth_token,
                 "accept": "application/json",
@@ -244,7 +270,7 @@ class Client(Generic[T]):
         else:
             payload = json.dumps(payload)
         return requests.put(
-            self.__build_url(*url),
+            build_url(*url),
             headers={
                 "xc-auth": self.auth_token,
                 "accept": "application/json",
@@ -253,17 +279,17 @@ class Client(Generic[T]):
             data=payload,
         )
 
-    @staticmethod
-    def __build_url(*args: Tuple[str]) -> str:
-        """Conceits multiple strings to a valid url. Handles the slashes."""
-        rsl = []
-        for part in args:
-            if len(part) == 0:
-                continue
-            if part[0] == "/":
-                part = part[1:]
-            if part[-1] == "/":
-                part = part[:-1]
-            if len(part) != 0:
-                rsl.append(part)
-        return "/".join(rsl)
+
+def build_url(*args: Tuple[str]) -> str:
+    """Conceits multiple strings to a valid url. Handles the slashes."""
+    rsl = []
+    for part in args:
+        if len(part) == 0:
+            continue
+        if part[0] == "/":
+            part = part[1:]
+        if part[-1] == "/":
+            part = part[:-1]
+        if len(part) != 0:
+            rsl.append(part)
+    return "/".join(rsl)
