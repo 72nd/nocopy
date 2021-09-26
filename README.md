@@ -1,11 +1,16 @@
 # nocopy
 
-Very simple REST client for the Airtable alternative [NocoDB](https://nocodb.com/) using [pydanitc](https://pydantic-docs.helpmanual.io/) models.
+Very simple REST client library and CLI app for the Airtable alternative [NocoDB](https://nocodb.com/) using [pydanitc](https://pydantic-docs.helpmanual.io/) models.
 
 (This by far not a complete implementation of the API, it's what I need for the moment.)
 
 
-## Example/Methods
+## CLI Usage
+
+nocopy is first and foremost a library but it also provides a simple CLI for recurring tasks like in- and exporting data. Please note that in contrast to the library there are no type-checks nor any validation. So it's up to you to check your input data.
+
+
+## Library example
 
 Example for the Noco table (which contains some school lessons) with the following model:
 

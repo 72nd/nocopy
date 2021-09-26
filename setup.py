@@ -19,9 +19,15 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires=">=3.6",
-    packages=["nocopy"],
+    packages=setuptools.find_packages(),
+    include_package_data=True,
+    entry_points="""
+        [console_scripts]
+        nocopy=nocopy.cli:cli
+    """,
     install_requires=[
-        "requests==2.27.0",
+        "click==8.0.1",
         "pydantic==1.8.2",
+        "requests==2.26.0",
     ]
 )
