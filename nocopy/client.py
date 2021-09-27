@@ -45,8 +45,11 @@ def exception_on_error_code(func):
         else:
             reason = response.reason
 
-        if "msg" in response.json():
-            message = f", {response.json()['msg']}"
+        try:
+            if "msg" in response.json():
+                message = f", {response.json()['msg']}"
+        except json.decoder.JSONDecodeError:
+            message = f":\n{response._content.decode()}"
 
         msg = f"{response.status_code} {kind} {reason} for url {response.url}{message}"
         raise requests.exceptions.HTTPError(
@@ -107,7 +110,7 @@ class Client(Generic[T]):
 
     def list(
         self,
-        where: Union[None, str] = None,
+        where: Optional[str] = None,
         limit: Optional[int] = None,
         offset: int = 0,
         sort: Union[None, str, List[str]] = None,
