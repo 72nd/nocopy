@@ -2,11 +2,15 @@
 Nocopy CLI application.
 """
 
+import csv
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional
 
 import click
 from pydantic import BaseModel
+
+from nocopy import Client
+from nocopy.client import build_url
 
 
 class Config(BaseModel):
@@ -154,6 +158,11 @@ def import_command(
 ):
     """Upload the content of a CSV file to NocoDB."""
     config = __check_get_config(config_file, url, token)
+    client = Client(
+        build_url(config.base_url, table),
+        config.auth_token,
+    )
+    print(client.count())
 
 
 @click.command()
@@ -171,6 +180,20 @@ def export(
 ):
     """Download the content of a NocoDB instance."""
     config = __check_get_config(config_file, url, token)
+    client = Client(
+        build_url(config.base_url, table),
+        config.auth_token,
+    )
+    data = client.list()
+    with open(output_file, "w", newline="") as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=data[0].keys(),
+            quotechar='"',
+        )
+        writer.writeheader()
+        for entry in data:
+            writer.writerow(entry)
 
 
 @click.command()
@@ -187,6 +210,19 @@ def template(
 ):
     """Generate a empty CSV template for a table."""
     config = __check_get_config(config_file, url, token)
+    print(build_url(config.base_url, table))
+    client = Client(
+        build_url(config.base_url, table),
+        config.auth_token,
+    )
+    data = client.list()
+    with open(output_file, "w", newline="") as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=data[0].keys(),
+            quotechar='"',
+        )
+        writer.writeheader()
 
 
 cli.add_command(import_command)
