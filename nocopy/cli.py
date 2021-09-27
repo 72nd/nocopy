@@ -99,6 +99,7 @@ def table_option(func):
     )(func)
     return func
 
+
 def token_option(func):
     func = click.option(
         "-k",
@@ -200,6 +201,7 @@ def export(
 @config_option
 @output_option
 @url_option
+@table_option
 @token_option
 def template(
     config_file: Path,
@@ -210,7 +212,6 @@ def template(
 ):
     """Generate a empty CSV template for a table."""
     config = __check_get_config(config_file, url, token)
-    print(build_url(config.base_url, table))
     client = Client(
         build_url(config.base_url, table),
         config.auth_token,
