@@ -10,18 +10,80 @@ Very simple REST client library and CLI app for the Airtable alternative [NocoDB
 nocopy is first and foremost a library but it also provides a simple CLI for recurring tasks like in- and exporting data. Please note that in contrast to the library there are no type-checks nor any validation. So it's up to you to check your input data.
 
 
+### Configuration
+
+The application has to know the URL and the secret token of your API endpoint. There are three different possibilities to define them:
+
+1. Using the `-u/--url` and `-k/--token` flags.
+2. Setting the `NOCO_URL` and `NOCO_TOKEN` environment variable.
+3. Using a configuration file.
+
+The configuration file is a simple JSON file. Which can be generated using the CLI:
+
+```shell script
+nocopy init -o config.json
+```
+
+
+### Export
+
+Export/download the records from the NocoDB into a CSV file. The first row will contain the name of the columns.
+
+```shell script
+nocopy export -c config.json -t Lessons -o exported-lessons.csv
+```
+
+
+### Import
+
+You can import/upload the content of a CSV file to the NocoDB (remember: there is no data validation whatsoever). The first row has to contain the names of the columns as in the NocoDB model. You can use the `template` command (see below) to obtain an empty CSV file with the correct header row. 
+
+```shell script
+nocopy import -c config.json -t Lessons -i raw-lessons.csv
+```
+
+Empty cells are parsed as `None`. For Boolean values (`True` and `False`) use `/TRUE` and `/FALSE`.
+
+
+### Init configuration
+
+Just a small convince function. Generates a new config file.
+
+```shell script
+nocopy init -o config.json
+```
+
+
+### Purge
+
+Deletes all records of a table as there is no native function for that in NocoDB (yet). Most of the time a rater stupid idea, takes also a considerable amount of time when running.
+
+```shell script
+nocopy purge -c config.json -t Lessons
+```
+
+
+### CSV Template
+
+Generates an empty CSV file with the correct header row. (Table on the NocoDB server has to contain at least one record for this to work.)
+
+```shell script
+nocopy template -c config.json -t Lessons -o lessons-template.csv
+```
+
+
 ## Library example
 
 Example for the Noco table (which contains some school lessons) with the following model:
 
 ```json
 {
-  "id": int,
-  "title": "string",
-  "created_at": "string",
-  "updated_at": "string",
-  "date": "string",
-  "time": "string"
+	"id": int,
+	"title": "string",
+	"created_at": "string",
+	"updated_at": "string",
+	"date": "string",
+	"time": "string"
 }
 ```
 
