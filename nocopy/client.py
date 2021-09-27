@@ -123,7 +123,9 @@ class Client(Generic[T]):
         where
             Complicated where conditions.
         limit
-            Number of rows to get(SQL limit value).
+            Number of rows to get(SQL limit value). When set to `None` all
+            records will be fetched by first determine the count of records
+            using the `Client.count` method.
         offset
             Offset for pagination(SQL offset value).
         sort
@@ -133,11 +135,12 @@ class Client(Generic[T]):
         fields1
             Required column names in child result.
         """
+        if limit is None:
+            limit = self.count()
         params = {
             "offset": offset,
+            "limit": limit,
         }
-        if limit is not None:
-            params["limit"] = limit
         if where is not None:
             params["where"] = where
         if sort is not None:
@@ -177,6 +180,11 @@ class Client(Generic[T]):
         """Returns whether a record with the given id exists or not."""
         rsp = self.__get({}, self.base_url, str(id), "exists")
         return rsp.json()
+
+    def count(self) -> int:
+        """Count records in table."""
+        rsp = self.__get({}, self.base_url, "count")
+        return rsp.json()["count"]
 
     def update(self, id: int, item: Union[Dict[str, Any], T]):
         """

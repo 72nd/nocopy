@@ -31,8 +31,8 @@ Because why not.
 	- [ ] limit
 	- [ ] offset
 	- [ ] sort
-- [ ] GET `/nc/{project}/api/v1/{table}/exists` Check record with provided id exists
-- [ ] GET `/nc/{project}/api/v1/{table}/count` Count records
+- [x] GET `/nc/{project}/api/v1/{table}/{id}/exists/` Check record with provided id exists
+- [x] GET `/nc/{project}/api/v1/{table}/count` Count records
 	- [ ] where
 - [ ] GET `/nc/{project}/api/v1/{table}/groupby` Group by column
 	- [ ] column_name
