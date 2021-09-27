@@ -4,6 +4,7 @@ Nocopy CLI application.
 
 import csv
 from pathlib import Path
+import sys
 from typing import Dict, Optional
 
 import click
@@ -212,6 +213,45 @@ def export(
 
 @click.command()
 @config_option
+@url_option
+@table_option
+@token_option
+def purge(
+    config_file: Path,
+    url: str,
+    table: str,
+    token: str,
+):
+    """Delete the all content of a table."""
+    config = __check_get_config(config_file, url, token)
+    client = Client(
+        build_url(config.base_url, table),
+        config.auth_token,
+    )
+
+    print(
+        f"This will PERMANENTLY delete ALL data in table {table} on {config.base_url}")
+    user = input("Is this ok (Y/n): ")
+    if user != "Y":
+        sys.exit(0)
+    # Being extra annoying because it's me...
+    user = input(
+        "Sure? Think again and then type the name of the table to proceed: "
+    )
+    if user != table:
+        sys.exit(0)
+    records = client.list()
+    with click.progressbar(
+        records,
+        label="Purge records...",
+        show_pos=True
+    ) as bar:
+        for record in bar:
+            client.delete(record["id"])
+
+
+@click.command()
+@config_option
 @output_option
 @url_option
 @table_option
@@ -241,6 +281,7 @@ def template(
 
 cli.add_command(import_command)
 cli.add_command(export)
+cli.add_command(purge)
 cli.add_command(template)
 
 
