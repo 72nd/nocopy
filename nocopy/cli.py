@@ -181,6 +181,17 @@ def import_command(
 
 
 @click.command()
+@output_option
+def init(output_file: Path):
+    """Generate an empty configuration file."""
+    cfg = Config(
+        base_url="https:///noco.example.com/nc/project/api/v1/",
+        auth_token="A-SECRET-TOKEN-FNORD",
+    )
+    cfg.to_file(output_file)
+
+
+@click.command()
 @config_option
 @output_option
 @url_option
@@ -280,6 +291,7 @@ def template(
 
 
 cli.add_command(import_command)
+cli.add_command(init)
 cli.add_command(export)
 cli.add_command(purge)
 cli.add_command(template)
