@@ -78,7 +78,7 @@ Example for the Noco table (which contains some school lessons) with the followi
 
 ```json
 {
-	"id": int,
+	"id": "int",
 	"title": "string",
 	"created_at": "string",
 	"updated_at": "string",
