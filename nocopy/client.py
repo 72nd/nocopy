@@ -48,8 +48,7 @@ def exception_on_error_code(func):
         if "msg" in response.json():
             message = f", {response.json()['msg']}"
 
-        msg = f"{response.status_code} {kind} {reason} for url {response.url}"
-        f"{message}"
+        msg = f"{response.status_code} {kind} {reason} for url {response.url}{message}"
         raise requests.exceptions.HTTPError(
             msg,
             response=response,
@@ -246,13 +245,23 @@ class Client(Generic[T]):
         """
         Send a POST request with the given payload to the URL.
         """
-        if isinstance(payload, self._type()):
+        if self._type() is not None and isinstance(payload, self._type()):
+            # Got single BaseModel instance.
             payload = payload.json(exclude={"id"})
         else:
+            # Got a list of model instances, a list of dict or a dict.
+            if not isinstance(payload, list):
+                # Has to be a single dict.
+                payload = [payload]
             url = (*url, "bulk")
             items = []
             for item in payload:
-                items.append(item.dict(exclude={"id"}))
+                if self._type() is None:
+                    # List of dicts.
+                    items.append(item)
+                else:
+                    # List of model instances.
+                    items.append(item.dict(exclude={"id"}))
             payload = json.dumps(items)
         return requests.post(
             build_url(*url),

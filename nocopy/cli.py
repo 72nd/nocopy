@@ -8,6 +8,7 @@ from typing import Dict, Optional
 
 import click
 from pydantic import BaseModel
+import requests
 
 from nocopy import Client
 from nocopy.client import build_url
@@ -163,7 +164,19 @@ def import_command(
         build_url(config.base_url, table),
         config.auth_token,
     )
-    print(client.count())
+    with open(input_file) as f:
+        data = csv.DictReader(f)
+        records = []
+        for entry in data:
+            for field in entry:
+                if entry[field] == "":
+                    entry[field] = None
+                if entry[field] == "/TRUE":
+                    entry[field] = True
+                elif entry[field] == "/FALSE":
+                    entry[field] = False
+            records.append(entry)
+    client.add(records)
 
 
 @click.command()
