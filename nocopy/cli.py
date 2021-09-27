@@ -79,6 +79,46 @@ def output_option(func):
     return func
 
 
+def query_params_option(func):
+    func = click.option(
+        "--where",
+        type=str,
+        required=False,
+        help="complicated where conditions",
+    )(func)
+    func = click.option(
+        "--limit",
+        type=int,
+        required=False,
+        help="number of rows to get(SQL limit value)",
+    )(func)
+    func = click.option(
+        "--offset",
+        type=int,
+        required=False,
+        help="offset for pagination(SQL offset value)",
+    )(func)
+    func = click.option(
+        "--sort",
+        type=str,
+        required=False,
+        help="sort by column name, use `-` as prefix for desc. sort",
+    )(func)
+    func = click.option(
+        "--fields",
+        type=str,
+        required=False,
+        help="required column names in result",
+    )(func)
+    func = click.option(
+        "--fields1",
+        type=str,
+        required=False,
+        help="required column names in child result",
+    )(func)
+    return func
+
+
 def url_option(func):
     func = click.option(
         "-u",
@@ -194,12 +234,19 @@ def init(output_file: Path):
 @click.command()
 @config_option
 @output_option
+@query_params_option
 @url_option
 @table_option
 @token_option
 def export(
     config_file: Path,
     output_file: Path,
+    where: Optional[str],
+    limit: Optional[int],
+    offset: Optional[int],
+    sort: Optional[str],
+    fields: Optional[str],
+    fields1: Optional[str],
     url: str,
     table: str,
     token: str,
@@ -210,7 +257,14 @@ def export(
         build_url(config.base_url, table),
         config.auth_token,
     )
-    data = client.list()
+    data = client.list(
+        where=where,
+        limit=limit,
+        offset=offset,
+        sort=sort,
+        fields=fields,
+        fields1=fields1,
+    )
     with open(output_file, "w", newline="") as f:
         writer = csv.DictWriter(
             f,

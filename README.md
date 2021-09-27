@@ -33,6 +33,15 @@ Export/download the records from the NocoDB into a CSV file. The first row will 
 nocopy export -c config.json -t Lessons -o exported-lessons.csv
 ```
 
+Optionally the [NocoDB's query parameters](https://docs.nocodb.com/developer-resources/rest-apis#query-params) are supported:
+
+- `--where` Complicated where conditions.
+- `--limit` Number of rows to get(SQL limit value).
+- `--offset` Offset for pagination(SQL offset value).
+- `--sort` Sort by column name, Use `-` as prefix for descending sort.
+- `--fields` Required column names in result.
+- `--fields1` Required column names in child result.
+
 
 ### Import
 
