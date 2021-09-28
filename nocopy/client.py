@@ -188,9 +188,15 @@ class Client(Generic[T]):
         rsp = self.__get({}, self.base_url, str(id), "exists")
         return rsp.json()
 
-    def count(self) -> int:
-        """Count records in table."""
-        rsp = self.__get({}, self.base_url, "count")
+    def count(self, where: Optional[str] = None) -> int:
+        """
+        Count records in table. Learn more on the where query parameters [here]
+        (https://docs.nocodb.com/developer-resources/rest-apis#query-params).
+        """
+        params = {}
+        if where is not None:
+            params["where"] = where
+        rsp = self.__get(params, self.base_url, "count")
         return rsp.json()["count"]
 
     def update(self, id: int, item: Union[Dict[str, Any], T]):
