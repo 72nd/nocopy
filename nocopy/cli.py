@@ -182,6 +182,42 @@ def count(
 @cli_options.config
 @cli_options.format
 @cli_options.output
+@cli_options.column_name
+@cli_options.where
+@cli_options.limit
+@cli_options.offset
+@cli_options.sort
+@cli_options.table
+def group_by(
+    config_file: Path,
+    file_format: Optional[str],
+    output_file: Path,
+    column_name: Optional[str],
+    where: Optional[str],
+    limit: Optional[int],
+    offset: Optional[int],
+    sort: Optional[str],
+    url: str,
+    table: str,
+    token: str,
+):
+    """Group records by given column."""
+    client = __get_client(config_file, url, table, token)
+    data = client.group_by(
+        column_name=column_name,
+        where=where,
+        limit=limit,
+        offset=offset,
+        sort=sort,
+        as_dict=True,
+    )
+    __write_output(output_file, file_format, data)
+
+
+@click.command()
+@cli_options.config
+@cli_options.format
+@cli_options.output
 @cli_options.where
 @cli_options.offset
 @cli_options.sort
@@ -359,6 +395,7 @@ def update(
 
 
 cli.add_command(count)
+cli.add_command(group_by)
 cli.add_command(find_first)
 cli.add_command(init)
 cli.add_command(push)

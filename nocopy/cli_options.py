@@ -88,6 +88,16 @@ def output(func):
     return func
 
 
+def column_name(func):
+    func = click.option(
+        "--column_name",
+        type=str,
+        required=False,
+        help="column name",
+    )(func)
+    return func
+
+
 def where(func):
     func = click.option(
         "--where",

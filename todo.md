@@ -25,21 +25,21 @@ Because why not.
 - [x] POST `/nc/{project}/api/v1/{table}/bulk` Bulk add a new records
 - [x] PUT `/nc/{project}/api/v1/{table}/{id}/bulk` Bulk update records
 - [-] DELETE `/nc/{project}/api/v1/{table}/{id}/bulk` Bulk delete records
-- [ ] GET `/nc/{project}/api/v1/{table}/findOne` Get first from filtered data
-	- [ ] fields
-	- [ ] where
-	- [ ] limit
-	- [ ] offset
-	- [ ] sort
+- [x] GET `/nc/{project}/api/v1/{table}/findOne` Get first from filtered data
+	- [x] fields
+	- [x] where
+	- [x] limit
+	- [x] offset
+	- [x] sort
 - [x] GET `/nc/{project}/api/v1/{table}/{id}/exists/` Check record with provided id exists
 - [x] GET `/nc/{project}/api/v1/{table}/count` Count records
 	- [x] where
-- [ ] GET `/nc/{project}/api/v1/{table}/groupby` Group by column
-	- [ ] column_name
-	- [ ] where
-	- [ ] limit
-	- [ ] offset
-	- [ ] sort
+- [x] GET `/nc/{project}/api/v1/{table}/groupby` Group by column
+	- [x] column_name
+	- [x] where
+	- [x] limit
+	- [x] offset
+	- [x] sort
 - [ ] GET `/nc/{project}/api/v1/{table}/distribution` Calculate
 	- [ ] column_name
 	- [ ] min

@@ -144,10 +144,10 @@ class Client(Generic[T]):
             "offset": offset,
             "limit": limit,
         }
-        params = self.__conditional_add_param(params, where, "where")
-        params = self.__conditional_add_param(params, sort, "sort")
-        params = self.__conditional_add_param(params, fields, "fields")
-        params = self.__conditional_add_param(params, fields1, "fields1")
+        params = self.__cond_add_param(params, where, "where")
+        params = self.__cond_add_param(params, sort, "sort")
+        params = self.__cond_add_param(params, fields, "fields")
+        params = self.__cond_add_param(params, fields1, "fields1")
         rsp = self.__get(params, self.base_url)
         return self.__build_return(rsp, as_dict)
 
@@ -198,7 +198,6 @@ class Client(Generic[T]):
     def find_first(
         self,
         where: Optional[str] = None,
-        limit: Optional[int] = None,
         offset: int = 0,
         sort: Union[None, str, List[str]] = None,
         fields: Union[None, str, List[str]] = None,
@@ -209,10 +208,6 @@ class Client(Generic[T]):
 
         where
             Complicated where conditions.
-        limit
-            Number of rows to get(SQL limit value). When set to `None` all
-            records will be fetched by first determine the count of records
-            using the `Client.count` method.
         offset
             Offset for pagination(SQL offset value).
         sort
@@ -223,11 +218,48 @@ class Client(Generic[T]):
         params = {
             "offset": offset,
         }
-        params = self.__conditional_add_param(params, where, "where")
-        params = self.__conditional_add_param(params, sort, "sort")
-        params = self.__conditional_add_param(params, fields, "fields")
+        params = self.__cond_add_param(params, where, "where")
+        params = self.__cond_add_param(params, sort, "sort")
+        params = self.__cond_add_param(params, fields, "fields")
         rsp = self.__get(params, self.base_url, "findOne")
         return [self.__build_return(rsp, as_dict)]
+
+    def group_by(
+        self,
+        column_name: Optional[str] = None,
+        where: Optional[str] = None,
+        limit: Optional[int] = None,
+        offset: int = 0,
+        sort: Union[None, str, List[str]] = None,
+        as_dict: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Get first record according to given filters.
+
+        column_name
+            Column name.
+        where
+            Complicated where conditions.
+        limit
+            Number of rows to get(SQL limit value). When set to `None` all
+            records will be fetched by first determine the count of records
+            using the `Client.count` method.
+        offset
+            Offset for pagination(SQL offset value).
+        sort
+            Sort by column name, Use `- a` prefix for descending sort.
+        """
+        if limit is None:
+            limit = self.count()
+        params = {
+            "offset": offset,
+            "limit": limit,
+        }
+        params = self.__cond_add_param(params, column_name, "column_name")
+        params = self.__cond_add_param(params, where, "where")
+        params = self.__cond_add_param(params, sort, "sort")
+        rsp = self.__get(params, self.base_url, "groupby")
+        return rsp.json()
 
     # HELPER METHODS
 
@@ -346,7 +378,7 @@ class Client(Generic[T]):
         return (payload, url)
 
     @staticmethod
-    def __conditional_add_param(
+    def __cond_add_param(
         params: Dict[str, Any],
         value: Optional[Any],
         key: str,
