@@ -16,6 +16,7 @@ import yaml
 
 from nocopy import Client
 from nocopy.client import build_url
+from nocopy import cli_options
 
 
 class Config(BaseModel):
@@ -36,143 +37,6 @@ class Config(BaseModel):
         """writes the `Config` as a JSON to a file."""
         with open(path, "w") as f:
             f.write(self.json())
-
-
-def config_option(func):
-    func = click.option(
-        "-c",
-        "--config",
-        "config_file",
-        type=click.Path(
-            exists=True,
-            path_type=Path,
-        ),
-        required=False,
-        help="path to config file",
-    )(func)
-    func = click.option(
-        "-u",
-        "--url",
-        type=str,
-        required=False,
-        help="base URL of the NocoDB API",
-        envvar="NOCO_URL",
-    )(func)
-    func = click.option(
-        "-k",
-        "--token",
-        type=str,
-        required=False,
-        help="JWT authentication token",
-        envvar="NOCO_TOKEN",
-    )(func)
-    return func
-
-
-def format_option(func):
-    func = click.option(
-        "-f",
-        "--format",
-        "file_format",
-        type=click.Choice(["CSV", "JSON", "YAML"], case_sensitive=False),
-        help="specify in-/output format",
-    )(func)
-    return func
-
-
-def fuzzy_query_option(func):
-    func = click.option(
-        "-q",
-        "--query",
-        "fuzzy_query",
-        type=str,
-        help="client side fuzzy query",
-    )(func)
-    return func
-
-
-def input_option(func):
-    func = click.option(
-        "-i",
-        "--input",
-        "input_file",
-        type=click.Path(
-            exists=True,
-            path_type=Path,
-        ),
-        required=True,
-        help="path to input file",
-    )(func)
-    return func
-
-
-def output_option(func):
-    func = click.option(
-        "-o",
-        "--output",
-        "output_file",
-        type=click.Path(
-            path_type=Path,
-        ),
-        help="path to output file",
-    )(func)
-    return func
-
-
-def where_option(func):
-    func = click.option(
-        "--where",
-        type=str,
-        required=False,
-        help="complicated where conditions",
-    )(func)
-    return func
-
-
-def query_params_option(func):
-    func = where_option(func)
-    func = click.option(
-        "--limit",
-        type=int,
-        required=False,
-        help="number of rows to get(SQL limit value)",
-    )(func)
-    func = click.option(
-        "--offset",
-        type=int,
-        required=False,
-        help="offset for pagination(SQL offset value)",
-    )(func)
-    func = click.option(
-        "--sort",
-        type=str,
-        required=False,
-        help="sort by column name, use `-` as prefix for desc. sort",
-    )(func)
-    func = click.option(
-        "--fields",
-        type=str,
-        required=False,
-        help="required column names in result",
-    )(func)
-    func = click.option(
-        "--fields1",
-        type=str,
-        required=False,
-        help="required column names in child result",
-    )(func)
-    return func
-
-
-def table_option(func):
-    func = click.option(
-        "-t",
-        "--table",
-        type=str,
-        required=True,
-        help="select the table",
-    )(func)
-    return func
 
 
 def __check_get_config(
@@ -299,9 +163,9 @@ def cli():
 
 
 @click.command()
-@config_option
-@where_option
-@table_option
+@cli_options.config
+@cli_options.where
+@cli_options.table
 def count(
     config_file: Path,
     where: Optional[str],
@@ -315,10 +179,10 @@ def count(
 
 
 @click.command()
-@config_option
-@format_option
-@input_option
-@table_option
+@cli_options.config
+@cli_options.format
+@cli_options.input
+@cli_options.table
 def push(
     config_file: Path,
     file_format: Optional[str],
@@ -335,7 +199,7 @@ def push(
 
 
 @click.command()
-@output_option
+@cli_options.output
 def init(output_file: Path):
     """Generate an empty configuration file."""
     cfg = Config(
@@ -346,12 +210,12 @@ def init(output_file: Path):
 
 
 @click.command()
-@config_option
-@format_option
-@fuzzy_query_option
-@output_option
-@query_params_option
-@table_option
+@cli_options.config
+@cli_options.format
+@cli_options.fuzzy_query
+@cli_options.output
+@cli_options.query_params
+@cli_options.table
 def pull(
     config_file: Path,
     file_format: Optional[str],
@@ -387,8 +251,8 @@ def pull(
 
 
 @click.command()
-@config_option
-@table_option
+@cli_options.config
+@cli_options.table
 def purge(
     config_file: Path,
     url: str,
@@ -399,7 +263,7 @@ def purge(
     client = __get_client(config_file, url, table, token)
 
     print(
-        f"This will PERMANENTLY delete ALL data in table {table} on {config.base_url}")
+        f"This will PERMANENTLY delete ALL data in table {table} on {client.base_url}")
     user = input("Is this ok (Y/n): ")
     if user != "Y":
         sys.exit(0)
@@ -420,10 +284,10 @@ def purge(
 
 
 @click.command()
-@config_option
-@format_option
-@output_option
-@table_option
+@cli_options.config
+@cli_options.format
+@cli_options.output
+@cli_options.table
 def template(
     config_file: Path,
     file_format: Optional[str],
@@ -441,9 +305,9 @@ def template(
 
 
 @click.command()
-@config_option
-@input_option
-@table_option
+@cli_options.config
+@cli_options.input
+@cli_options.table
 def update(
     config_file: Path,
     input_file: Path,
