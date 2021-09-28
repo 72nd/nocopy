@@ -12,7 +12,7 @@ Because why not.
 	- [ ] mm, Comma separated child table names(Many to Many)
 	- [x] where
 	- [x] limit
-	- [ ] limit: All when `None` given
+	- [x] limit: All when `None` given
 	- [x] offset
 	- [x] sort
 - [ ] GET `/nc/{project}/api/v1/{table}/{id}` Get record by id
@@ -23,8 +23,8 @@ Because why not.
 - [x] PUT `/nc/{project}/api/v1/{table}/{id}` Update a record
 - [x] DELETE `/nc/{project}/api/v1/{table}/{id}` Delete a record
 - [x] POST `/nc/{project}/api/v1/{table}/bulk` Bulk add a new records
-- [ ] PUT `/nc/{project}/api/v1/{table}/{id}/bulk` Bulk update records
-- [ ] DELETE `/nc/{project}/api/v1/{table}/{id}/bulk` Bulk delete records
+- [x] PUT `/nc/{project}/api/v1/{table}/{id}/bulk` Bulk update records
+- [-] DELETE `/nc/{project}/api/v1/{table}/{id}/bulk` Bulk delete records
 - [ ] GET `/nc/{project}/api/v1/{table}/findOne` Get first from filtered data
 	- [ ] fields
 	- [ ] where
@@ -33,7 +33,7 @@ Because why not.
 	- [ ] sort
 - [x] GET `/nc/{project}/api/v1/{table}/{id}/exists/` Check record with provided id exists
 - [x] GET `/nc/{project}/api/v1/{table}/count` Count records
-	- [ ] where
+	- [x] where
 - [ ] GET `/nc/{project}/api/v1/{table}/groupby` Group by column
 	- [ ] column_name
 	- [ ] where

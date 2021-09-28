@@ -98,32 +98,47 @@ def where(func):
     return func
 
 
-def query_params(func):
-    func = where(func)
+def limit(func):
     func = click.option(
         "--limit",
         type=int,
         required=False,
         help="number of rows to get(SQL limit value)",
     )(func)
+    return func
+
+
+def offset(func):
     func = click.option(
         "--offset",
         type=int,
         required=False,
         help="offset for pagination(SQL offset value)",
     )(func)
+    return func
+
+
+def sort(func):
     func = click.option(
         "--sort",
         type=str,
         required=False,
         help="sort by column name, use `-` as prefix for desc. sort",
     )(func)
+    return func
+
+
+def fields(func):
     func = click.option(
         "--fields",
         type=str,
         required=False,
         help="required column names in result",
     )(func)
+    return func
+
+
+def fields1(func):
     func = click.option(
         "--fields1",
         type=str,

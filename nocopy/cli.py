@@ -214,7 +214,12 @@ def init(output_file: Path):
 @cli_options.format
 @cli_options.fuzzy_query
 @cli_options.output
-@cli_options.query_params
+@cli_options.where
+@cli_options.limit
+@cli_options.offset
+@cli_options.sort
+@cli_options.fields
+@cli_options.fields1
 @cli_options.table
 def pull(
     config_file: Path,
