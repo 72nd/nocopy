@@ -27,8 +27,7 @@ nocopy init -o config.json
 
 ### A word on in/output files and their formats
 
-Most of the operations of nocopy cli 
-nocopy-cli currently supports [CSV](https://en.wikipedia.org/wiki/Comma-separated_values) and [JSON](https://en.wikipedia.org/wiki/JSON) files for in- and output. 
+A number of nocopy-cli's operation consist of reading or writing from/to a file. Currently [YAML](https://en.wikipedia.org/wiki/YAML), [CSV](https://en.wikipedia.org/wiki/Comma-separated_values) and [JSON](https://en.wikipedia.org/wiki/JSON) are supported ether as file or per stdin/stdout. The application tries to determine the format based on the file extension. Otherwise YAML will be used. Use the `-f/--format` flag to specify the format.
 
 
 ### Pull

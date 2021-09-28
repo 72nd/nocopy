@@ -116,6 +116,7 @@ class Client(Generic[T]):
         sort: Union[None, str, List[str]] = None,
         fields: Union[None, str, List[str]] = None,
         fields1: Union[None, str, List[str]] = None,
+        as_dict: bool = False,
     ) -> Union[List[Dict], List[T]]:
         """
         Get a list of all items applying to the optional parameters. Learn more
@@ -165,7 +166,11 @@ class Client(Generic[T]):
 
         rsl = []
         for item in rsp.json():
-            rsl.append(self._type().parse_obj(item))
+            tmp = self._type().parse_obj(item)
+            if as_dict:
+                rsl.append(tmp.dict())
+            else:
+                rsl.append(tmp)
         return rsl
 
     def by_id(self, id: int) -> T:

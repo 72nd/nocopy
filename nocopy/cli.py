@@ -4,12 +4,14 @@ Nocopy CLI application.
 
 import csv
 import io
+import json
 from pathlib import Path
 import sys
 from typing import Any, Dict, Optional
 
 import click
 from pydantic import BaseModel
+import yaml
 
 from nocopy import Client
 from nocopy.client import build_url
@@ -46,6 +48,17 @@ def config_option(func):
         ),
         required=False,
         help="path to config file",
+    )(func)
+    return func
+
+
+def format_option(func):
+    func = click.option(
+        "-f",
+        "--format",
+        "file_format",
+        type=click.Choice(["CSV", "JSON", "YAML"], case_sensitive=False),
+        help="specify in-/output format",
     )(func)
     return func
 
@@ -180,6 +193,24 @@ def __check_get_config(
     return Config.from_file(config_file)
 
 
+def __determine_file_type(
+    file: Optional[Path],
+    format_option: Optional[str]
+) -> str:
+    if format_option is not None:
+        return format_option
+    if file is not None:
+        if file.suffix.lower() == ".json":
+            return "JSON"
+        elif file.suffix.lower() == ".csv":
+            return "CSV"
+        elif file.suffix.lower() == ".yaml" or file.suffix.lower() == ".yml":
+            return "YAML"
+        else:
+            print(f"{file.suffix} is a unknown file type, default to YAML")
+    return "YAML"
+
+
 def __load_csv(input_file: Path) -> Dict[str, Any]:
     with open(input_file) as f:
         data = csv.DictReader(f)
@@ -192,6 +223,40 @@ def __load_csv(input_file: Path) -> Dict[str, Any]:
     return rsl
 
 
+def __get_csv(data: Dict[str, Any]) -> str:
+    buffer = io.StringIO()
+    writer = csv.DictWriter(
+        buffer,
+        fieldnames=data[0].keys(),
+        quotechar='"',
+    )
+    writer.writeheader()
+    for entry in data:
+        writer.writerow(entry)
+    return buffer.getvalue()
+
+
+def __write_output(
+    output_file: Optional[Path],
+    format_option: Optional[str],
+    data: Dict[str, Any],
+):
+    format_option = __determine_file_type(output_file, format_option)
+    print(format_option)
+    if format_option == "YAML":
+        rsl = yaml.dump(data)
+    elif format_option == "JSON":
+        rsl = json.dumps(data)
+    elif format_option == "CSV":
+        rsl = __get_csv(data)
+
+    if output_file is not None:
+        with open(output_file, "w") as f:
+            f.write(rsl)
+    else:
+        print(rsl)
+
+
 @click.group()
 def cli():
     """CLI tools for NocoDB."""
@@ -199,6 +264,7 @@ def cli():
 
 @click.command()
 @config_option
+@format_option
 @input_option
 @url_option
 @table_option
@@ -233,6 +299,7 @@ def init(output_file: Path):
 
 @click.command()
 @config_option
+@format_option
 @output_option
 @query_params_option
 @url_option
@@ -240,6 +307,7 @@ def init(output_file: Path):
 @token_option
 def pull(
     config_file: Path,
+    file_format: str,
     output_file: Path,
     where: Optional[str],
     limit: Optional[int],
@@ -264,22 +332,9 @@ def pull(
         sort=sort,
         fields=fields,
         fields1=fields1,
+        as_dict=True,
     )
-    buffer = io.StringIO()
-    writer = csv.DictWriter(
-        buffer,
-        fieldnames=data[0].keys(),
-        quotechar='"',
-    )
-    writer.writeheader()
-    for entry in data:
-        writer.writerow(entry)
-
-    if output_file is not None:
-        with open(output_file, "w") as f:
-            f.write(buffer.getvalue())
-    else:
-        print(buffer.getvalue())
+    __write_output(output_file, file_format, data)
 
 
 @click.command()
