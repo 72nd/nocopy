@@ -7,7 +7,7 @@ import io
 import json
 from pathlib import Path
 import sys
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import click
 from pydantic import BaseModel
@@ -236,7 +236,7 @@ def __load_input(
         return __load_csv(input_file)
 
 
-def __get_csv(data: Dict[str, Any]) -> str:
+def __get_csv(data: Dict[str, Any], only_header: bool = False) -> str:
     buffer = io.StringIO()
     writer = csv.DictWriter(
         buffer,
@@ -244,15 +244,17 @@ def __get_csv(data: Dict[str, Any]) -> str:
         quotechar='"',
     )
     writer.writeheader()
-    for entry in data:
-        writer.writerow(entry)
+    if not only_header:
+        for entry in data:
+            writer.writerow(entry)
     return buffer.getvalue()
 
 
 def __write_output(
     output_file: Optional[Path],
     format_option: Optional[str],
-    data: Dict[str, Any],
+    data: List[Dict[str, Any]],
+    only_header: bool = False,
 ):
     format_option = __determine_file_type(output_file, format_option)
     if format_option == "YAML":
@@ -260,7 +262,7 @@ def __write_output(
     elif format_option == "JSON":
         rsl = json.dumps(data)
     elif format_option == "CSV":
-        rsl = __get_csv(data)
+        rsl = __get_csv(data, only_header=only_header)
 
     if output_file is not None:
         with open(output_file, "w") as f:
@@ -392,31 +394,29 @@ def purge(
 
 @click.command()
 @config_option
+@format_option
 @output_option
 @url_option
 @table_option
 @token_option
 def template(
     config_file: Path,
-    output_file: Path,
+    file_format: Optional[str],
+    output_file: Optional[Path],
     url: str,
     table: str,
     token: str,
 ):
-    """Generate a empty CSV template for a table."""
+    """Generate a empty template for a specified table."""
     config = __check_get_config(config_file, url, token)
     client = Client(
         build_url(config.base_url, table),
         config.auth_token,
     )
-    data = client.list()
-    with open(output_file, "w", newline="") as f:
-        writer = csv.DictWriter(
-            f,
-            fieldnames=data[0].keys(),
-            quotechar='"',
-        )
-        writer.writeheader()
+    data = client.list()[0]
+    for key in data:
+        data[key] = None
+    __write_output(output_file, file_format, [data], only_header=True)
 
 
 @click.command()
