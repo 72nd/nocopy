@@ -223,6 +223,19 @@ def __load_csv(input_file: Path) -> Dict[str, Any]:
     return rsl
 
 
+def __load_input(
+    input_file: Optional[Path],
+    format_option: Optional[str],
+) -> Dict[str, Any]:
+    format_option = __determine_file_type(input_file, format_option)
+    if format_option == "YAML":
+        return yaml.load(open(input_file))
+    elif format_option == "JSON":
+        return json.load(open(input_file))
+    elif format_option == "CSV":
+        return __load_csv(input_file)
+
+
 def __get_csv(data: Dict[str, Any]) -> str:
     buffer = io.StringIO()
     writer = csv.DictWriter(
@@ -242,7 +255,6 @@ def __write_output(
     data: Dict[str, Any],
 ):
     format_option = __determine_file_type(output_file, format_option)
-    print(format_option)
     if format_option == "YAML":
         rsl = yaml.dump(data)
     elif format_option == "JSON":
@@ -271,6 +283,7 @@ def cli():
 @token_option
 def push(
     config_file: Path,
+    file_format: Optional[str],
     input_file: Path,
     url: str,
     table: str,
@@ -282,7 +295,8 @@ def push(
         build_url(config.base_url, table),
         config.auth_token,
     )
-    data = __load_csv(input_file)
+    data = __load_input(input_file, file_format)
+
     client.add(data)
 
 
@@ -307,7 +321,7 @@ def init(output_file: Path):
 @token_option
 def pull(
     config_file: Path,
-    file_format: str,
+    file_format: Optional[str],
     output_file: Path,
     where: Optional[str],
     limit: Optional[int],
