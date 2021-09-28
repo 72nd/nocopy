@@ -3,13 +3,13 @@ Nocopy CLI application.
 """
 
 import csv
+import io
 from pathlib import Path
 import sys
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import click
 from pydantic import BaseModel
-import requests
 
 from nocopy import Client
 from nocopy.client import build_url
@@ -73,7 +73,6 @@ def output_option(func):
         type=click.Path(
             path_type=Path,
         ),
-        required=True,
         help="path to output file",
     )(func)
     return func
@@ -181,43 +180,44 @@ def __check_get_config(
     return Config.from_file(config_file)
 
 
+def __load_csv(input_file: Path) -> Dict[str, Any]:
+    with open(input_file) as f:
+        data = csv.DictReader(f)
+        rsl = []
+        for entry in data:
+            for field in entry:
+                if entry[field] == "":
+                    entry[field] = None
+            rsl.append(entry)
+    return rsl
+
+
 @click.group()
 def cli():
     """CLI tools for NocoDB."""
 
 
-@click.command("import")
+@click.command()
 @config_option
 @input_option
 @url_option
 @table_option
 @token_option
-def import_command(
+def push(
     config_file: Path,
     input_file: Path,
     url: str,
     table: str,
     token: str,
 ):
-    """Upload the content of a CSV file to NocoDB."""
+    """Upload the content of a JSON/CSV file to NocoDB."""
     config = __check_get_config(config_file, url, token)
     client = Client(
         build_url(config.base_url, table),
         config.auth_token,
     )
-    with open(input_file) as f:
-        data = csv.DictReader(f)
-        records = []
-        for entry in data:
-            for field in entry:
-                if entry[field] == "":
-                    entry[field] = None
-                if entry[field] == "/TRUE":
-                    entry[field] = True
-                elif entry[field] == "/FALSE":
-                    entry[field] = False
-            records.append(entry)
-    client.add(records)
+    data = __load_csv(input_file)
+    client.add(data)
 
 
 @click.command()
@@ -238,7 +238,7 @@ def init(output_file: Path):
 @url_option
 @table_option
 @token_option
-def export(
+def pull(
     config_file: Path,
     output_file: Path,
     where: Optional[str],
@@ -251,7 +251,7 @@ def export(
     table: str,
     token: str,
 ):
-    """Download the content of a NocoDB instance."""
+    """Pull the records from a NocoDB instance."""
     config = __check_get_config(config_file, url, token)
     client = Client(
         build_url(config.base_url, table),
@@ -265,15 +265,21 @@ def export(
         fields=fields,
         fields1=fields1,
     )
-    with open(output_file, "w", newline="") as f:
-        writer = csv.DictWriter(
-            f,
-            fieldnames=data[0].keys(),
-            quotechar='"',
-        )
-        writer.writeheader()
-        for entry in data:
-            writer.writerow(entry)
+    buffer = io.StringIO()
+    writer = csv.DictWriter(
+        buffer,
+        fieldnames=data[0].keys(),
+        quotechar='"',
+    )
+    writer.writeheader()
+    for entry in data:
+        writer.writerow(entry)
+
+    if output_file is not None:
+        with open(output_file, "w") as f:
+            f.write(buffer.getvalue())
+    else:
+        print(buffer.getvalue())
 
 
 @click.command()
@@ -344,11 +350,35 @@ def template(
         writer.writeheader()
 
 
-cli.add_command(import_command)
+@click.command()
+@config_option
+@input_option
+@url_option
+@table_option
+@token_option
+def update(
+    config_file: Path,
+    input_file: Path,
+    url: str,
+    table: str,
+    token: str,
+):
+    """Update records."""
+    config = __check_get_config(config_file, url, token)
+    client = Client(
+        build_url(config.base_url, table),
+        config.auth_token,
+    )
+    data = __load_csv(input_file)
+    client.bulk_update(data)
+
+
+cli.add_command(push)
 cli.add_command(init)
-cli.add_command(export)
+cli.add_command(pull)
 cli.add_command(purge)
 cli.add_command(template)
+cli.add_command(update)
 
 
 if __name__ == "__main__":

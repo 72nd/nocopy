@@ -195,6 +195,13 @@ class Client(Generic[T]):
         """
         self.__put(item, self.base_url, str(id))
 
+    def bulk_update(self, items: List[T]):
+        """
+        Update multiple items. Dict has to contain the id of the record to
+        be changed.
+        """
+        self.__put(items, self.base_url, exclude_id=False)
+
     def delete(self, id: int):
         """Delete a item with a given id."""
         self.__delete(self.base_url, str(id))
@@ -248,7 +255,54 @@ class Client(Generic[T]):
         """
         Send a POST request with the given payload to the URL.
         """
-        if self._type() is not None and isinstance(payload, self._type()):
+        payload, url = self.__build_payload(
+            payload,
+            *url,
+        )
+        return requests.post(
+            build_url(*url),
+            headers={
+                "xc-auth": self.auth_token,
+                "accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            data=payload,
+        )
+
+    @exception_on_error_code
+    def __put(
+        self,
+        payload: Union[Dict[str, Any], T],
+        *url: Tuple[str],
+        exclude_id: bool = True,
+    ) -> requests.Response:
+        """
+        Send a PUT request with the given payload to the URL.
+        """
+        payload, url = self.__build_payload(
+            payload,
+            *url,
+            exclude_id=exclude_id,
+        )
+        return requests.put(
+            build_url(*url),
+            headers={
+                "xc-auth": self.auth_token,
+                "accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            data=payload,
+        )
+
+    def __build_payload(
+        self,
+        payload: Union[T, List[T]],
+        *url: Tuple[str],
+        exclude_id: bool = True,
+    ) -> Tuple[Union[str, Tuple[str]]]:
+        """Handles the different possible payloads."""
+        if self._type() is not None and isinstance(payload, self._type()) and \
+                exclude_id:
             # Got single BaseModel instance.
             payload = payload.json(exclude={"id"})
         else:
@@ -266,38 +320,7 @@ class Client(Generic[T]):
                     # List of model instances.
                     items.append(item.dict(exclude={"id"}))
             payload = json.dumps(items)
-        return requests.post(
-            build_url(*url),
-            headers={
-                "xc-auth": self.auth_token,
-                "accept": "application/json",
-                "Content-Type": "application/json",
-            },
-            data=payload,
-        )
-
-    @exception_on_error_code
-    def __put(
-        self,
-        payload: Union[Dict[str, Any], T],
-        *url: Tuple[str],
-    ) -> requests.Response:
-        """
-        Send a PUT request with the given payload to the URL.
-        """
-        if isinstance(payload, self._type()):
-            payload = payload.json(exclude={"id"})
-        else:
-            payload = json.dumps(payload)
-        return requests.put(
-            build_url(*url),
-            headers={
-                "xc-auth": self.auth_token,
-                "accept": "application/json",
-                "Content-Type": "application/json",
-            },
-            data=payload,
-        )
+        return (payload, url)
 
 
 def build_url(*args: Tuple[str]) -> str:

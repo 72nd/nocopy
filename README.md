@@ -25,12 +25,18 @@ nocopy init -o config.json
 ```
 
 
-### Export
+### A word on in/output files and their formats
 
-Export/download the records from the NocoDB into a CSV file. The first row will contain the name of the columns.
+Most of the operations of nocopy cli 
+nocopy-cli currently supports [CSV](https://en.wikipedia.org/wiki/Comma-separated_values) and [JSON](https://en.wikipedia.org/wiki/JSON) files for in- and output. 
+
+
+### Pull
+
+Pull/download the records from the NocoDB into a CSV file. The first row will contain the name of the columns.
 
 ```shell script
-nocopy export -c config.json -t Lessons -o exported-lessons.csv
+nocopy pull -c config.json -t Lessons -o exported-lessons.csv
 ```
 
 Optionally the [NocoDB's query parameters](https://docs.nocodb.com/developer-resources/rest-apis#query-params) are supported:
@@ -43,15 +49,15 @@ Optionally the [NocoDB's query parameters](https://docs.nocodb.com/developer-res
 - `--fields1` Required column names in child result.
 
 
-### Import
+### Push
 
-You can import/upload the content of a CSV file to the NocoDB (remember: there is no data validation whatsoever). The first row has to contain the names of the columns as in the NocoDB model. You can use the `template` command (see below) to obtain an empty CSV file with the correct header row. 
+You can push/upload the content of a CSV file to the NocoDB (remember: there is no data validation whatsoever). The first row has to contain the names of the columns as in the NocoDB model. You can use the `template` command (see below) to obtain an empty CSV file with the correct header row. 
 
 ```shell script
-nocopy import -c config.json -t Lessons -i raw-lessons.csv
+nocopy push -c config.json -t Lessons -i raw-lessons.csv
 ```
 
-Empty cells are parsed as `None`. For Boolean values (`True` and `False`) use `/TRUE` and `/FALSE`.
+Empty cells are parsed as `None`. For Boolean values (`True` and `False`) use `True` and `False`.
 
 
 ### Init configuration
@@ -71,6 +77,14 @@ Deletes all records of a table as there is no native function for that in NocoDB
 nocopy purge -c config.json -t Lessons
 ```
 
+
+### Update
+
+You can update records in the NocoDB. The id has to be specified in the CSV.
+
+```shell script
+nocopy update -c config.json -t Lessons -i update-lessons.csv
+```
 
 ### CSV Template
 
