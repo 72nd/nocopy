@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 
 import click
 from pydantic import BaseModel
+from thefuzz import process as fuzz_process
 import yaml
 
 from nocopy import Client
@@ -49,6 +50,22 @@ def config_option(func):
         required=False,
         help="path to config file",
     )(func)
+    func = click.option(
+        "-u",
+        "--url",
+        type=str,
+        required=False,
+        help="base URL of the NocoDB API",
+        envvar="NOCO_URL",
+    )(func)
+    func = click.option(
+        "-k",
+        "--token",
+        type=str,
+        required=False,
+        help="JWT authentication token",
+        envvar="NOCO_TOKEN",
+    )(func)
     return func
 
 
@@ -59,6 +76,17 @@ def format_option(func):
         "file_format",
         type=click.Choice(["CSV", "JSON", "YAML"], case_sensitive=False),
         help="specify in-/output format",
+    )(func)
+    return func
+
+
+def fuzzy_query_option(func):
+    func = click.option(
+        "-q",
+        "--query",
+        "fuzzy_query",
+        type=str,
+        help="client side fuzzy query",
     )(func)
     return func
 
@@ -131,18 +159,6 @@ def query_params_option(func):
     return func
 
 
-def url_option(func):
-    func = click.option(
-        "-u",
-        "--url",
-        type=str,
-        required=False,
-        help="base URL of the NocoDB API",
-        envvar="NOCO_URL",
-    )(func)
-    return func
-
-
 def table_option(func):
     func = click.option(
         "-t",
@@ -150,18 +166,6 @@ def table_option(func):
         type=str,
         required=True,
         help="select the table",
-    )(func)
-    return func
-
-
-def token_option(func):
-    func = click.option(
-        "-k",
-        "--token",
-        type=str,
-        required=False,
-        help="JWT authentication token",
-        envvar="NOCO_TOKEN",
     )(func)
     return func
 
@@ -280,9 +284,7 @@ def cli():
 @config_option
 @format_option
 @input_option
-@url_option
 @table_option
-@token_option
 def push(
     config_file: Path,
     file_format: Optional[str],
@@ -316,11 +318,10 @@ def init(output_file: Path):
 @click.command()
 @config_option
 @format_option
+@fuzzy_query_option
 @output_option
 @query_params_option
-@url_option
 @table_option
-@token_option
 def pull(
     config_file: Path,
     file_format: Optional[str],
@@ -331,6 +332,7 @@ def pull(
     sort: Optional[str],
     fields: Optional[str],
     fields1: Optional[str],
+    fuzzy_query: Optional[str],
     url: str,
     table: str,
     token: str,
@@ -350,14 +352,18 @@ def pull(
         fields1=fields1,
         as_dict=True,
     )
+    if fuzzy_query is not None:
+        fuzz = fuzz_process.extractBests(fuzzy_query, data, score_cutoff=50)
+        data = []
+        for rsl in fuzz:
+            data.append(rsl[0])
+            print(rsl[1])
     __write_output(output_file, file_format, data)
 
 
 @click.command()
 @config_option
-@url_option
 @table_option
-@token_option
 def purge(
     config_file: Path,
     url: str,
@@ -396,9 +402,7 @@ def purge(
 @config_option
 @format_option
 @output_option
-@url_option
 @table_option
-@token_option
 def template(
     config_file: Path,
     file_format: Optional[str],
@@ -422,9 +426,7 @@ def template(
 @click.command()
 @config_option
 @input_option
-@url_option
 @table_option
-@token_option
 def update(
     config_file: Path,
     input_file: Path,
