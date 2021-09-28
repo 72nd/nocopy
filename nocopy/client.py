@@ -144,34 +144,12 @@ class Client(Generic[T]):
             "offset": offset,
             "limit": limit,
         }
-        if where is not None:
-            params["where"] = where
-        if sort is not None:
-            if isinstance(sort, List[str]):
-                sort = ",".join(sort)
-            params["sort"] = sort
-        if fields is not None:
-            if isinstance(fields, List[str]):
-                fields = ",".join(fields)
-            params["fields"] = fields
-        if fields1 is not None:
-            if isinstance(fields1, List[str]):
-                fields1 = ",".join(fields1)
-            params["fields1"] = fields1
-
+        params = self.__conditional_add_param(params, where, "where")
+        params = self.__conditional_add_param(params, sort, "sort")
+        params = self.__conditional_add_param(params, fields, "fields")
+        params = self.__conditional_add_param(params, fields1, "fields1")
         rsp = self.__get(params, self.base_url)
-
-        if self._type() is None:
-            return rsp.json()
-
-        rsl = []
-        for item in rsp.json():
-            tmp = self._type().parse_obj(item)
-            if as_dict:
-                rsl.append(tmp.dict())
-            else:
-                rsl.append(tmp)
-        return rsl
+        return self.__build_return(rsp, as_dict)
 
     def by_id(self, id: int) -> T:
         """Return a item with the given id."""
@@ -187,17 +165,6 @@ class Client(Generic[T]):
         """Returns whether a record with the given id exists or not."""
         rsp = self.__get({}, self.base_url, str(id), "exists")
         return rsp.json()
-
-    def count(self, where: Optional[str] = None) -> int:
-        """
-        Count records in table. Learn more on the where query parameters [here]
-        (https://docs.nocodb.com/developer-resources/rest-apis#query-params).
-        """
-        params = {}
-        if where is not None:
-            params["where"] = where
-        rsp = self.__get(params, self.base_url, "count")
-        return rsp.json()["count"]
 
     def update(self, id: int, item: Union[Dict[str, Any], T]):
         """
@@ -216,6 +183,51 @@ class Client(Generic[T]):
     def delete(self, id: int):
         """Delete a item with a given id."""
         self.__delete(self.base_url, str(id))
+
+    def count(self, where: Optional[str] = None) -> int:
+        """
+        Count records in table. Learn more on the where query parameters [here]
+        (https://docs.nocodb.com/developer-resources/rest-apis#query-params).
+        """
+        params = {}
+        if where is not None:
+            params["where"] = where
+        rsp = self.__get(params, self.base_url, "count")
+        return rsp.json()["count"]
+
+    def find_first(
+        self,
+        where: Optional[str] = None,
+        limit: Optional[int] = None,
+        offset: int = 0,
+        sort: Union[None, str, List[str]] = None,
+        fields: Union[None, str, List[str]] = None,
+        as_dict: bool = False,
+    ) -> T:
+        """
+        Get first record according to given filters.
+
+        where
+            Complicated where conditions.
+        limit
+            Number of rows to get(SQL limit value). When set to `None` all
+            records will be fetched by first determine the count of records
+            using the `Client.count` method.
+        offset
+            Offset for pagination(SQL offset value).
+        sort
+            Sort by column name, Use `- a` prefix for descending sort.
+        fields
+            Required column names in result.
+        """
+        params = {
+            "offset": offset,
+        }
+        params = self.__conditional_add_param(params, where, "where")
+        params = self.__conditional_add_param(params, sort, "sort")
+        params = self.__conditional_add_param(params, fields, "fields")
+        rsp = self.__get(params, self.base_url, "findOne")
+        return [self.__build_return(rsp, as_dict)]
 
     # HELPER METHODS
 
@@ -332,6 +344,47 @@ class Client(Generic[T]):
                     items.append(item.dict(exclude={"id"}))
             payload = json.dumps(items)
         return (payload, url)
+
+    @staticmethod
+    def __conditional_add_param(
+        params: Dict[str, Any],
+        value: Optional[Any],
+        key: str,
+    ) -> Dict[str, Any]:
+        """
+        Helps with the building of the params for requests. A parameter will
+        be added with a given key to the dict if the value is not `None`.
+        Additionally if the value is a list it will be converted into a
+        comma separated string.
+        """
+        if value is None:
+            return params
+        if isinstance(value, list):
+            value = ",".join(value)
+        params[key] = value
+        return params
+
+    def __build_return(
+        self,
+        response: requests.Response,
+        as_dict: bool,
+    ) -> Union[List[Dict], List[T]]:
+        """
+        Handles the return of fetched records. This is needed as some
+        methods provide an option to return the result as a List of dicts
+        rather a `BaseModel` derived model.
+        """
+        if self._type() is None:
+            return response.json()
+
+        rsl = []
+        for item in response.json():
+            tmp = self._type().parse_obj(item)
+            if as_dict:
+                rsl.append(tmp.dict())
+            else:
+                rsl.append(tmp)
+        return rsl
 
 
 def build_url(*args: Tuple[str]) -> str:

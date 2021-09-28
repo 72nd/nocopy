@@ -181,6 +181,38 @@ def count(
 @click.command()
 @cli_options.config
 @cli_options.format
+@cli_options.output
+@cli_options.where
+@cli_options.offset
+@cli_options.sort
+@cli_options.fields
+@cli_options.table
+def find_first(
+    config_file: Path,
+    file_format: Optional[str],
+    output_file: Path,
+    where: Optional[str],
+    offset: Optional[int],
+    sort: Optional[str],
+    fields: Optional[str],
+    url: str,
+    table: str,
+    token: str,
+):
+    """Find the first record matching the given query."""
+    client = __get_client(config_file, url, table, token)
+    data = client.find_first(
+        where=where,
+        offset=offset,
+        sort=sort,
+        fields=fields,
+    )
+    __write_output(output_file, file_format, data)
+
+
+@click.command()
+@cli_options.config
+@cli_options.format
 @cli_options.input
 @cli_options.table
 def push(
@@ -327,8 +359,9 @@ def update(
 
 
 cli.add_command(count)
-cli.add_command(push)
+cli.add_command(find_first)
 cli.add_command(init)
+cli.add_command(push)
 cli.add_command(pull)
 cli.add_command(purge)
 cli.add_command(template)
