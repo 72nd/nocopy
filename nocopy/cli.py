@@ -119,13 +119,18 @@ def output_option(func):
     return func
 
 
-def query_params_option(func):
+def where_option(func):
     func = click.option(
         "--where",
         type=str,
         required=False,
         help="complicated where conditions",
     )(func)
+    return func
+
+
+def query_params_option(func):
+    func = where_option(func)
     func = click.option(
         "--limit",
         type=int,
@@ -295,12 +300,18 @@ def cli():
 
 @click.command()
 @config_option
+@where_option
 @table_option
 def count(
     config_file: Path,
+    where: Optional[str],
+    url: str,
     table: str,
+    token: str,
 ):
     """Count the records in a table."""
+    client = __get_client(config_file, url, table, token)
+    print(client.count(where=where))
 
 
 @click.command()
@@ -446,6 +457,7 @@ def update(
     client.bulk_update(data)
 
 
+cli.add_command(count)
 cli.add_command(push)
 cli.add_command(init)
 cli.add_command(pull)
