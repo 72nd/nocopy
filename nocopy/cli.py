@@ -240,6 +240,19 @@ def __load_input(
         return __load_csv(input_file)
 
 
+def __get_client(
+    config_file: Path,
+    url: str,
+    table: str,
+    token: str,
+) -> Client:
+    config = __check_get_config(config_file, url, token)
+    return Client(
+        build_url(config.base_url, table),
+        config.auth_token,
+    )
+
+
 def __get_csv(data: Dict[str, Any], only_header: bool = False) -> str:
     buffer = io.StringIO()
     writer = csv.DictWriter(
@@ -282,6 +295,16 @@ def cli():
 
 @click.command()
 @config_option
+@table_option
+def count(
+    config_file: Path,
+    table: str,
+):
+    """Count the records in a table."""
+
+
+@click.command()
+@config_option
 @format_option
 @input_option
 @table_option
@@ -294,11 +317,7 @@ def push(
     token: str,
 ):
     """Upload the content of a JSON/CSV file to NocoDB."""
-    config = __check_get_config(config_file, url, token)
-    client = Client(
-        build_url(config.base_url, table),
-        config.auth_token,
-    )
+    client = __get_client(config_file, url, table, token)
     data = __load_input(input_file, file_format)
 
     client.add(data)
@@ -338,11 +357,7 @@ def pull(
     token: str,
 ):
     """Pull the records from a NocoDB instance."""
-    config = __check_get_config(config_file, url, token)
-    client = Client(
-        build_url(config.base_url, table),
-        config.auth_token,
-    )
+    client = __get_client(config_file, url, table, token)
     data = client.list(
         where=where,
         limit=limit,
@@ -357,7 +372,6 @@ def pull(
         data = []
         for rsl in fuzz:
             data.append(rsl[0])
-            print(rsl[1])
     __write_output(output_file, file_format, data)
 
 
@@ -371,11 +385,7 @@ def purge(
     token: str,
 ):
     """Delete the all content of a table."""
-    config = __check_get_config(config_file, url, token)
-    client = Client(
-        build_url(config.base_url, table),
-        config.auth_token,
-    )
+    client = __get_client(config_file, url, table, token)
 
     print(
         f"This will PERMANENTLY delete ALL data in table {table} on {config.base_url}")
@@ -412,11 +422,7 @@ def template(
     token: str,
 ):
     """Generate a empty template for a specified table."""
-    config = __check_get_config(config_file, url, token)
-    client = Client(
-        build_url(config.base_url, table),
-        config.auth_token,
-    )
+    client = __get_client(config_file, url, table, token)
     data = client.list()[0]
     for key in data:
         data[key] = None
@@ -435,11 +441,7 @@ def update(
     token: str,
 ):
     """Update records."""
-    config = __check_get_config(config_file, url, token)
-    client = Client(
-        build_url(config.base_url, table),
-        config.auth_token,
-    )
+    client = __get_client(config_file, url, table, token)
     data = __load_csv(input_file)
     client.bulk_update(data)
 
