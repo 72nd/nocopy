@@ -392,7 +392,6 @@ class Client(Generic[T]):
                 "Content-Type": "application/json",
             },
             data=payload,
-            exclude_id=False,
         )
 
     def __build_payload(
@@ -402,7 +401,6 @@ class Client(Generic[T]):
         exclude_id: bool = True,
     ) -> Tuple[Union[str, Tuple[str]]]:
         """Handles the different possible payloads."""
-        print(self._type())
         if self._type() is not None and isinstance(payload, self._type()) and \
                 exclude_id:
             # Got single BaseModel instance.
@@ -413,7 +411,7 @@ class Client(Generic[T]):
             url = (*url, "bulk")
             items = []
             for item in payload:
-                if self._type() is None:
+                if isinstance(payload, dict):
                     # List of dicts.
                     items.append(item)
                 else:
