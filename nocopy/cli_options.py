@@ -120,6 +120,7 @@ def column_name(func):
 
 def where(func):
     func = click.option(
+        "-w",
         "--where",
         type=str,
         required=False,

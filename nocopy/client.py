@@ -379,13 +379,11 @@ class Client(Generic[T]):
         """
         Send a PUT request with the given payload to the URL.
         """
-        print("=====")
         payload, url = self.__build_payload(
             payload,
             *url,
             exclude_id=exclude_id,
         )
-        print(payload)
         return requests.put(
             build_url(*url),
             headers={
@@ -394,6 +392,7 @@ class Client(Generic[T]):
                 "Content-Type": "application/json",
             },
             data=payload,
+            exclude_id=False,
         )
 
     def __build_payload(
@@ -403,7 +402,7 @@ class Client(Generic[T]):
         exclude_id: bool = True,
     ) -> Tuple[Union[str, Tuple[str]]]:
         """Handles the different possible payloads."""
-        print(payload)
+        print(self._type())
         if self._type() is not None and isinstance(payload, self._type()) and \
                 exclude_id:
             # Got single BaseModel instance.
