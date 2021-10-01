@@ -53,14 +53,14 @@ Because why not.
 	- [ ] limit
 	- [ ] offset
 	- [ ] sort
-- [ ] GET `/nc/{project}/api/v1/{table}/aggregate` Get first one from filtered data
-	- [ ] column_name
-	- [ ] func
-	- [ ] having
-	- [ ] fields
-	- [ ] limit
-	- [ ] offset
-	- [ ] sort
+- [x] GET `/nc/{project}/api/v1/{table}/aggregate` Get first one from filtered data
+	- [x] column_name
+	- [x] func
+	- [x] having
+	- [x] fields
+	- [x] limit
+	- [x] offset
+	- [x] sort
 
 
 ## Relations

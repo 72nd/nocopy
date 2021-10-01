@@ -209,7 +209,47 @@ def group_by(
         limit=limit,
         offset=offset,
         sort=sort,
-        as_dict=True,
+    )
+    __write_output(output_file, file_format, data)
+
+
+@click.command()
+@cli_options.config
+@cli_options.format
+@cli_options.output
+@cli_options.column_name
+@cli_options.func
+@cli_options.havign
+@cli_options.fields
+@cli_options.limit
+@cli_options.offset
+@cli_options.sort
+@cli_options.table
+def aggregate(
+    config_file: Path,
+    file_format: Optional[str],
+    output_file: Path,
+    column_name: Optional[str],
+    func: Optional[str],
+    having: Optional[str],
+    fields: Optional[str],
+    limit: Optional[int],
+    offset: Optional[int],
+    sort: Optional[str],
+    url: str,
+    table: str,
+    token: str,
+):
+    """Aggregate records using functions."""
+    client = __get_client(config_file, url, table, token)
+    data = client.aggregate(
+        column_name=column_name,
+        func=func,
+        having=having,
+        fields=fields,
+        limit=limit,
+        offset=offset,
+        sort=sort,
     )
     __write_output(output_file, file_format, data)
 
@@ -340,7 +380,7 @@ def purge(
     user = input("Is this ok (Y/n): ")
     if user != "Y":
         sys.exit(0)
-    # Being extra annoying because it's me...
+    # Being extra annoying because the user is me...
     user = input(
         "Sure? Think again and then type the name of the table to proceed: "
     )
@@ -350,7 +390,7 @@ def purge(
     with click.progressbar(
         records,
         label="Purge records...",
-        show_pos=True
+        show_pos=True,
     ) as bar:
         for record in bar:
             client.delete(record["id"])
@@ -394,6 +434,41 @@ def update(
     client.bulk_update(data)
 
 
+@click.command()
+@cli_options.config
+@cli_options.field
+@cli_options.where
+@cli_options.value
+@cli_options.table
+def update_field(
+    config_file: Path,
+    field: str,
+    where: Optional[str],
+    value: str,
+    url: str,
+    table: str,
+    token: str,
+):
+    """Set field value of matching records"""
+    client = __get_client(config_file, url, table, token)
+    records = client.list(where=where, as_dict=True)
+
+    print(
+        f"About to change the field {field} to '{value}' in {len(records)} occurrences"
+    )
+    user = input("Is this ok (Y/n): ")
+    if user != "Y":
+        sys.exit(0)
+    with click.progressbar(
+        records,
+        label=f"update field {field}",
+        show_pos=True,
+    ) as bar:
+        for record in bar:
+            client.update(record["id"], {field: value})
+
+
+cli.add_command(aggregate)
 cli.add_command(count)
 cli.add_command(group_by)
 cli.add_command(find_first)
@@ -403,6 +478,7 @@ cli.add_command(pull)
 cli.add_command(purge)
 cli.add_command(template)
 cli.add_command(update)
+cli.add_command(update_field)
 
 
 if __name__ == "__main__":

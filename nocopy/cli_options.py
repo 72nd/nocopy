@@ -88,9 +88,29 @@ def output(func):
     return func
 
 
+def func(func):
+    func = click.option(
+        "--func",
+        type=str,
+        required=False,
+        help="Agr. function(s), min, max, avg, sum, count",
+    )(func)
+    return func
+
+
+def havign(func):
+    func = click.option(
+        "--having",
+        type=str,
+        required=False,
+        help="having expression",
+    )(func)
+    return func
+
+
 def column_name(func):
     func = click.option(
-        "--column_name",
+        "--column-name",
         type=str,
         required=False,
         help="column name",
@@ -138,12 +158,23 @@ def sort(func):
     return func
 
 
+def field(func):
+    func = click.option(
+        "-f",
+        "--field",
+        type=str,
+        required=True,
+        help="which column should be changed",
+    )(func)
+    return func
+
+
 def fields(func):
     func = click.option(
         "--fields",
         type=str,
         required=False,
-        help="required column names in result",
+        help="which columns to show in the result",
     )(func)
     return func
 
@@ -154,6 +185,17 @@ def fields1(func):
         type=str,
         required=False,
         help="required column names in child result",
+    )(func)
+    return func
+
+
+def value(func):
+    func = click.option(
+        "-v",
+        "--value",
+        type=str,
+        required=True,
+        help="value to be set",
     )(func)
     return func
 

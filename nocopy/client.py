@@ -231,7 +231,6 @@ class Client(Generic[T]):
         limit: Optional[int] = None,
         offset: int = 0,
         sort: Union[None, str, List[str]] = None,
-        as_dict: bool = False,
     ) -> Dict[str, Any]:
         """
         Get first record according to given filters.
@@ -252,13 +251,59 @@ class Client(Generic[T]):
         if limit is None:
             limit = self.count()
         params = {
-            "offset": offset,
             "limit": limit,
+            "offset": offset,
         }
         params = self.__cond_add_param(params, column_name, "column_name")
         params = self.__cond_add_param(params, where, "where")
         params = self.__cond_add_param(params, sort, "sort")
         rsp = self.__get(params, self.base_url, "groupby")
+        return rsp.json()
+
+    def aggregate(
+        self,
+        column_name: Optional[str] = None,
+        func: Union[None, str, List[str]] = None,
+        having: Optional[str] = None,
+        fields: Union[None, str, List[str]] = None,
+        limit: Optional[int] = None,
+        offset: int = 0,
+        sort: Union[None, str, List[str]] = None,
+        as_dict: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Filter and aggergate records using functions.
+
+        column_name
+            Column name.
+        func
+            One or multiple aggregate function(s). Can be min, max, avg, sum,
+            count.
+        having
+            Having expression.
+        fields
+            Fields from the model.
+        limit
+            Number of rows to get(SQL limit value). When set to `None` all
+            records will be fetched by first determine the count of records
+            using the `Client.count` method.
+        offset
+            Offset for pagination(SQL offset value).
+        sort
+            Sort by column name, Use `- a` prefix for descending sort.
+        """
+        if limit is None:
+            limit = self.count()
+        params = {
+            "limit": limit,
+            "offset": offset,
+        }
+        params = self.__cond_add_param(params, column_name, "column_name")
+        params = self.__cond_add_param(params, func, "func")
+        params = self.__cond_add_param(params, having, "having")
+        params = self.__cond_add_param(params, fields, "fields")
+        params = self.__cond_add_param(params, sort, "sort")
+        rsp = self.__get(params, self.base_url, "")
         return rsp.json()
 
     # HELPER METHODS
@@ -334,11 +379,13 @@ class Client(Generic[T]):
         """
         Send a PUT request with the given payload to the URL.
         """
+        print("=====")
         payload, url = self.__build_payload(
             payload,
             *url,
             exclude_id=exclude_id,
         )
+        print(payload)
         return requests.put(
             build_url(*url),
             headers={
@@ -356,15 +403,14 @@ class Client(Generic[T]):
         exclude_id: bool = True,
     ) -> Tuple[Union[str, Tuple[str]]]:
         """Handles the different possible payloads."""
+        print(payload)
         if self._type() is not None and isinstance(payload, self._type()) and \
                 exclude_id:
             # Got single BaseModel instance.
             payload = payload.json(exclude={"id"})
+        elif isinstance(payload, dict):
+            payload = json.dumps(payload)
         else:
-            # Got a list of model instances, a list of dict or a dict.
-            if not isinstance(payload, list):
-                # Has to be a single dict.
-                payload = [payload]
             url = (*url, "bulk")
             items = []
             for item in payload:
