@@ -396,6 +396,46 @@ def purge(
             client.delete(record["id"])
 
 
+@click.command("sum")
+@cli_options.config
+@cli_options.format
+@cli_options.output
+@cli_options.where
+@cli_options.limit
+@cli_options.offset
+@cli_options.sort
+@cli_options.field
+@cli_options.table
+def sum_command(
+    config_file: Path,
+    file_format: Optional[str],
+    output_file: Path,
+    where: Optional[str],
+    limit: Optional[int],
+    offset: Optional[int],
+    sort: Optional[str],
+    field: str,
+    url: str,
+    table: str,
+    token: str,
+):
+    """Sum of the values of a requested field"""
+    client = __get_client(config_file, url, table, token)
+    data = client.list(
+        where=where,
+        limit=limit,
+        offset=offset,
+        sort=sort,
+        as_dict=True,
+    )
+    rsl = 0
+    for record in data:
+        value = record[field]
+        if value is not None:
+            rsl += value
+    print(rsl)
+
+
 @click.command()
 @cli_options.config
 @cli_options.format
@@ -476,6 +516,7 @@ cli.add_command(init)
 cli.add_command(push)
 cli.add_command(pull)
 cli.add_command(purge)
+cli.add_command(sum_command)
 cli.add_command(template)
 cli.add_command(update)
 cli.add_command(update_field)
