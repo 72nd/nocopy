@@ -2,6 +2,7 @@ from pydantic import BaseModel
 import requests
 
 import csv
+import datetime
 import json
 from pathlib import Path
 from typing import (
@@ -411,13 +412,13 @@ class Client(Generic[T]):
             url = (*url, "bulk")
             items = []
             for item in payload:
-                if isinstance(item, dict):
+                if self._type() is None:
                     # List of dicts.
                     items.append(item)
                 else:
                     # List of model instances.
                     items.append(item.dict(exclude={"id"}))
-            payload = json.dumps(items)
+            payload = json.dumps(items, default=self.__json_converter)
         return (payload, url)
 
     @staticmethod
@@ -460,6 +461,11 @@ class Client(Generic[T]):
             else:
                 rsl.append(tmp)
         return rsl
+
+    @staticmethod
+    def __json_converter(value):
+        if isinstance(value, datetime.date):
+            return str(value)
 
 
 def build_url(*args: Tuple[str]) -> str:
