@@ -411,7 +411,7 @@ class Client(Generic[T]):
             url = (*url, "bulk")
             items = []
             for item in payload:
-                if isinstance(payload, dict):
+                if isinstance(item, dict):
                     # List of dicts.
                     items.append(item)
                 else:
