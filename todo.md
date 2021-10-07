@@ -1,6 +1,14 @@
 # ToDo
 
-Because why not.
+
+## General
+
+- [ ] Split CLI-app and library into two packages
+- [ ] Update README
+- [ ] Add both libraries to PyPi
+- [ ] Optimize `purge` by using bulk deletion
+- [ ] Optimize `update-field` by using bulk put
+- [ ] Support stdin
 
 ## Basics
 
@@ -24,7 +32,7 @@ Because why not.
 - [x] DELETE `/nc/{project}/api/v1/{table}/{id}` Delete a record
 - [x] POST `/nc/{project}/api/v1/{table}/bulk` Bulk add a new records
 - [x] PUT `/nc/{project}/api/v1/{table}/{id}/bulk` Bulk update records
-- [-] DELETE `/nc/{project}/api/v1/{table}/{id}/bulk` Bulk delete records
+- [ ] DELETE `/nc/{project}/api/v1/{table}/{id}/bulk` Bulk delete records
 - [x] GET `/nc/{project}/api/v1/{table}/findOne` Get first from filtered data
 	- [x] fields
 	- [x] where

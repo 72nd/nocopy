@@ -74,6 +74,7 @@ class Client(Generic[T]):
     """Base URL of the NocoDB API."""
     auth_token: str
     """JWT authentication token."""
+    debug: bool
 
     def __init__(
         self,
@@ -412,7 +413,7 @@ class Client(Generic[T]):
             url = (*url, "bulk")
             items = []
             for item in payload:
-                if self._type() is None:
+                if isinstance(item, dict):
                     # List of dicts.
                     items.append(item)
                 else:
