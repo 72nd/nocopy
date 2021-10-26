@@ -1,102 +1,20 @@
 # nocopy
 
-Very simple REST client library and CLI app for the Airtable alternative [NocoDB](https://nocodb.com/) using [pydanitc](https://pydantic-docs.helpmanual.io/) models.
+Very simple REST client library for the Airtable alternative [NocoDB](https://nocodb.com/) with the optional ability of using [pydanitc](https://pydantic-docs.helpmanual.io/) models.
 
 (This by far not a complete implementation of the API, it's what I need for the moment. Current progress [here](todo.md))
 
 
-## CLI Usage
+## CLI App
+
+There is an command line application using this
 
 nocopy is first and foremost a library but it also provides a simple CLI for recurring tasks like in- and exporting data. Please note that in contrast to the library there are no type-checks nor any validation. So it's up to you to check your input data.
 
 
-### Configuration
+## Usage
 
-The application has to know the URL and the secret token of your API endpoint. There are three different possibilities to define them:
-
-1. Using the `-u/--url` and `-k/--token` flags.
-2. Setting the `NOCO_URL` and `NOCO_TOKEN` environment variable.
-3. Using a configuration file.
-
-The configuration file is a simple JSON file. Which can be generated using the CLI:
-
-```shell script
-nocopy init -o config.json
-```
-
-
-### A word on in/output files and their formats
-
-A number of nocopy-cli's operation consist of reading or writing from/to a file. Currently [YAML](https://en.wikipedia.org/wiki/YAML), [CSV](https://en.wikipedia.org/wiki/Comma-separated_values) and [JSON](https://en.wikipedia.org/wiki/JSON) are supported ether as file or per stdin/stdout. The application tries to determine the format based on the file extension. Otherwise YAML will be used. Use the `-f/--format` flag to specify the format.
-
-
-### Pull
-
-Pull/download the records from the NocoDB into a CSV file. The first row will contain the name of the columns.
-
-```shell script
-nocopy pull -c config.json -t Lessons -o exported-lessons.csv
-```
-
-Optionally the [NocoDB's query parameters](https://docs.nocodb.com/developer-resources/rest-apis#query-params) are supported:
-
-- `--where` Complicated where conditions.
-- `--limit` Number of rows to get(SQL limit value).
-- `--offset` Offset for pagination(SQL offset value).
-- `--sort` Sort by column name, Use `-` as prefix for descending sort.
-- `--fields` Required column names in result.
-- `--fields1` Required column names in child result.
-
-
-### Push
-
-You can push/upload the content of a CSV file to the NocoDB (remember: there is no data validation whatsoever). The first row has to contain the names of the columns as in the NocoDB model. You can use the `template` command (see below) to obtain an empty CSV file with the correct header row. 
-
-```shell script
-nocopy push -c config.json -t Lessons -i raw-lessons.csv
-```
-
-Empty cells are parsed as `None`. For Boolean values (`True` and `False`) use `True` and `False`.
-
-
-### Init configuration
-
-Just a small convince function. Generates a new config file.
-
-```shell script
-nocopy init -o config.json
-```
-
-
-### Purge
-
-Deletes all records of a table as there is no native function for that in NocoDB (yet). Most of the time a rater stupid idea, takes also a considerable amount of time when running.
-
-```shell script
-nocopy purge -c config.json -t Lessons
-```
-
-
-### Update
-
-You can update records in the NocoDB. The id has to be specified in the CSV.
-
-```shell script
-nocopy update -c config.json -t Lessons -i update-lessons.csv
-```
-
-### CSV Template
-
-Generates an empty CSV file with the correct header row. (Table on the NocoDB server has to contain at least one record for this to work.)
-
-```shell script
-nocopy template -c config.json -t Lessons -o lessons-template.csv
-```
-
-
-## Library example
-
-Example for the Noco table (which contains some school lessons) with the following model:
+For this section we assume the following Noco table (which contains some school lessons):
 
 ```json
 {
@@ -109,8 +27,10 @@ Example for the Noco table (which contains some school lessons) with the followi
 }
 ```
 
-_Remark 1:_ Your model should have a `id` field.  
-_Remark 2:_ As you see Noco uses strings for dates and times. As it uses the default date-format you can use pydantic to simplicity convert them into the respective python types.
+### Instantiate a client using pydantic model
+
+You can use [pydantic](https://pydantic-docs.helpmanual.io/) to define the structure of your NocoDB table as a model. This provides you with additional niceties provided by pydantic like validation. If possible it's highly recommended to use this feature.
+
 
 ```python
 from pydantic import BaseModel
@@ -134,18 +54,42 @@ client = Client[Lesson](
 )
 ``` 
 
+As you see Generics are used to tie a `Client` instance to a specific pydantic `BaseModel`. Please note the following:
+
+_Remark 1:_ Your model needs a `id` field.  
+_Remark 2:_ As you see Noco uses strings for dates and times. As it uses the default date-format you can use pydantic to simplicity convert them into the respective python types.
+
+
+### Instantiate generic client
+
+It's not always possible to know the structure of the NocoDB table in advance and thus being able to define concrete pydantic model for it (like when writing a application for interacting with arbitrary NocoDB databases). That's why nocopy also supports the interaction with the database using dictionaries as a generic data structure. This is simply archived by not defining a BaseModel as below:
+
+```python
+form nocopy import Client
+
+# Instantiate a generic Client instance.
+generic_client = Client(
+	"https://noco.example.com/nc/project/api/v1/lessons",
+	"SECRET_AUTH_TOKEN",
+)
+``` 
+
 
 ### Add record(s)
 
+Add a new record using the pydantic model `Lesson`.
+
 ```python
-# Add a new record.
 client.add(Lesson(
 	title="Math",
 	date=datetime.time(2021, 2, 3),
 	time=datetime.time(10, 0),
 ))
+``` 
 
-# Add multiple records at once (bulk).
+Add multiple records at once using a list of model instances.
+
+```python
 client.add([
 	Lesson(
 		title="Math",
@@ -157,6 +101,28 @@ client.add([
 		date=datetime.time(2021, 2, 3),
 		time=datetime.time(12, 0),
 	),
+])
+``` 
+
+Add (a) record(s) using the generic client.
+
+```python
+generic_client.add(dict{
+	"title": "Math",
+	"date": datetime.time(2021, 2, 3),
+	"time": datetime.time(10, 0),
+})
+generic_client.add([
+	{
+		"title": "Math",
+		"date": datetime.time(2021, 2, 3),
+		"time": datetime.time(10, 0),
+	},
+	{
+		"title": "English",
+		"date": datetime.time(2021, 2, 3),
+		"time": datetime.time(10, 0),
+	},
 ])
 ``` 
 
