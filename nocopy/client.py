@@ -175,7 +175,7 @@ class Client(Generic[T]):
         """
         self.__put(item, self.base_url, str(id))
 
-    def bulk_update(self, items: List[T]):
+    def bulk_update(self, items: List[Union[Dict[str, Any]]]):
         """
         Update multiple items. Dict has to contain the id of the record to
         be changed.
@@ -374,7 +374,7 @@ class Client(Generic[T]):
     @exception_on_error_code
     def __put(
         self,
-        payload: Union[Dict[str, Any], T],
+        payload: List[Union[Dict[str, Any], T]],
         *url: Tuple[str],
         exclude_id: bool = True,
     ) -> requests.Response:

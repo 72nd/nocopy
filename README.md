@@ -150,16 +150,51 @@ You can make more fancy queries using NocoDB's [query params](https://docs.nocod
 A record can by updated by giving it's `id` and a dict mapping the desired field name to the new value (will just update the selected field) or a model (exchanging the whole record).
 
 ```python
-# Using a new model.
+# Update the whole record with id 0.
 client.update(0, Lesson(
 	title="French",
-	date=datetime.time(2021, 4, 2),
+	date=datetime.date(2021, 4, 2),
 	time=datetime.time(14, 0),
 ))
 
-# Selective updating using a dict.
+# Selectively updating the title of the record with id 0 using a dict.
 client.update(0, {"title": "Biology"})
 ```
+
+
+It's also possible to update multiple entries at once using a list of models or dicts. Using dictionaries to bulk update records gives you the ability to selectively update fields in a record. The `id` has to be defined in both cases.
+
+
+```python
+# Bulk updating using models.
+client.bulk_update([
+	Lesson(
+		id=0,
+		title="Fench",
+		date=datetime.date(2021, 4, 2),
+		time=datetime.time(14, 0),
+	),
+	Lesson(
+		id=1,
+		title="German",
+		date=datetime.date(2021, 4, 2),
+		time=datetime.time(14, 0),
+	),
+])
+
+# Selectively updating fields using dicts.
+client.bulk_update([
+	{
+		"id": 0,
+		"title": "French",
+	},
+	{
+		"id": 1,
+		"date": datetime.date(2021, 2, 3),
+	},
+])
+``` 
+
 
 
 ### Delete
