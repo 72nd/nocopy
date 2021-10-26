@@ -2,7 +2,7 @@
 
 Very simple REST client library for the Airtable alternative [NocoDB](https://nocodb.com/) with the optional ability of using [pydanitc](https://pydantic-docs.helpmanual.io/) models.
 
-(This by far not a complete implementation of the API, it's what I need for the moment. Current progress [here](todo.md))
+This by far not a complete implementation of the API. The project is the direct result of my needs for managing a project which uses NocoDB. The current state can be seen in the [todo](todo.md) document. You're welcome to extend and enhance this library.
 
 
 ## CLI App
